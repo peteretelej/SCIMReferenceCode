@@ -17,12 +17,14 @@ namespace Microsoft.SCIM.WebHostSample.Controllers
     [ApiController]
     public class TokenController : ControllerBase
     {
-        private readonly IConfiguration configuration;        
+        private readonly IConfiguration configuration;
+        private readonly string initAPIKey;
         private const int defaultTokenExpirationTimeInMins = 120;
 
         public TokenController(IConfiguration Configuration)
         {
             this.configuration = Configuration;
+            this.initAPIKey = this.configuration["INIT_API_KEY"];
         }
 
         private string GenerateJSONWebToken()
@@ -58,6 +60,14 @@ namespace Microsoft.SCIM.WebHostSample.Controllers
         [HttpGet]
         public ActionResult Get()
         {
+            if (!String.IsNullOrEmpty(this.initAPIKey))
+            {
+                if (Request.Headers["INIT_API_KEY"] != this.initAPIKey)
+                {
+                    return this.Unauthorized("This API Endpoint requires INIT_API_KEY to generate token");
+                }
+            }
+
             string tokenString = this.GenerateJSONWebToken();
             return this.Ok(new { token = tokenString });
         }
